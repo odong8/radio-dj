@@ -1,0 +1,6 @@
+.manus-logs/
+dist/
+node_modules/
+coverage/
+uploads/
+*.local

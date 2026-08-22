@@ -1,0 +1,11 @@
+{
+  "task_kind": "markdown-to-pdf",
+  "output": "pdf",
+  "signals": [],
+  "hard_constraints": ["Korean CJK typography", "structured academic assignment report"],
+  "content_features": {
+    "code_blocks": 1,
+    "defined_terms": 0,
+    "portrait_images": 0
+  }
+}

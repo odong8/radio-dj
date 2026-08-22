@@ -1,0 +1,21 @@
+flowchart LR
+  U[청취자] -->|기분·에너지·DJ·사연 입력| W[React + TypeScript<br/>내 방의 라디오 DJ]
+  W -->|POST /api/generate| G[Vercel Function<br/>방송 대사 생성]
+  G -->|구조화된 JSON 요청| L[LLM API]
+  L -->|title·opening·body·closing| G
+  G -->|검증된 방송 대사| W
+  W -->|POST /api/synthesize| T[Vercel Function<br/>AI DJ 음성 생성]
+  T -->|서버 전용 API 키| E[ElevenLabs TTS API]
+  E -->|MP3 바이트 스트림| T
+  T -->|즉시 재생용 MP3 응답| W
+  W <--> |보관함·즐겨찾기| S[Browser LocalStorage]
+  A[공개 BGM·DJ 미리듣기 MP3] --> W
+
+  classDef client fill:#1b213d,stroke:#fda4af,color:#ffffff;
+  classDef function fill:#31224e,stroke:#c4b5fd,color:#ffffff;
+  classDef api fill:#123449,stroke:#67e8f9,color:#ffffff;
+  classDef storage fill:#27351f,stroke:#bef264,color:#ffffff;
+  class W,U client;
+  class G,T function;
+  class L,E api;
+  class S,A storage;
