@@ -98,49 +98,12 @@ export function parseGeneratedScript(content: string) {
 }
 
 async function requestGeminiScript(model: string, input: GenerationInput) {
-  const privateKey = process.env.GEMINI_PRIVATE_KEY;
-  const serviceAccountEmail = process.env.GEMINI_SERVICE_ACCOUNT_EMAIL;
-  if (!privateKey || !serviceAccountEmail) throw new Error("GEMINI_CREDENTIALS_MISSING");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_CREDENTIALS_MISSING");
 
-  // Create JWT token for Service Account authentication
-  const crypto = await import("crypto");
-  const { createSign } = crypto;
-  
-  const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64url");
-  const now = Math.floor(Date.now() / 1000);
-  const payload = Buffer.from(JSON.stringify({
-    iss: serviceAccountEmail,
-    scope: "https://www.googleapis.com/auth/cloud-platform",
-    aud: "https://oauth2.googleapis.com/token",
-    exp: now + 3600,
-    iat: now,
-  })).toString("base64url");
-
-  const signatureInput = `${header}.${payload}`;
-  const sign = createSign("RSA-SHA256");
-  sign.update(signatureInput);
-  const signature = sign.sign(privateKey, "base64url");
-  const jwtToken = `${signatureInput}.${signature}`;
-
-  // Exchange JWT for access token
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwtToken,
-    }),
-  });
-
-  const tokenData = await tokenResponse.json() as { access_token?: string };
-  if (!tokenData.access_token) throw new Error("GEMINI_TOKEN_GENERATION_FAILED");
-
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${tokenData.access_token}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemInstruction(input) }] },
       contents: [{ role: "user", parts: [{ text: userInput(input) }] }],
@@ -229,10 +192,7 @@ export async function generateHandler(req: ApiRequest, res: ApiResponse) {
     }
     console.error("[Vercel Radio] Script generation failed", error instanceof Error ? error.message : "unknown_error");
     if (error instanceof Error && error.message === "GEMINI_CREDENTIALS_MISSING") {
-      return res.status(503).json({ message: "배포 환경에 Gemini Service Account 자격증명이 설정되지 않았습니다." });
-    }
-    if (error instanceof Error && error.message === "GEMINI_TOKEN_GENERATION_FAILED") {
-      return res.status(503).json({ message: "Gemini 인증 토큰 생성에 실패했습니다. API 자격증명을 확인해 주세요." });
+      return res.status(503).json({ message: "배포 환경에 Gemini API 키(GEMINI_API_KEY)가 설정되지 않았습니다." });
     }
   }
 
