@@ -97,6 +97,16 @@ export function parseGeneratedScript(content: string) {
   }
 }
 
+// Local deterministic fallback generator for free usage / dev
+export function generateLocalScript(input: GenerationInput) {
+  const title = `${input.mode} — 작은 사연`;
+  const opening = `${input.story.slice(0, 40)} 님, 오늘의 기분은 ${input.mood}이군요.`;
+  const body = `${input.story} 지금 이 순간을 천천히 숨 고르며 들어볼게요.`.slice(0, 420);
+  const closing = `오늘 밤도 수고하셨어요. 작은 한 걸음 응원할게요.`;
+  const candidate = { title, opening, body, closing };
+  return scriptSchema.safeParse(candidate);
+}
+
 async function requestGeminiScript(model: string, input: GenerationInput) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_CREDENTIALS_MISSING");
@@ -179,6 +189,12 @@ export async function generateHandler(req: ApiRequest, res: ApiResponse) {
       recoveryIssues: recovery.error.issues.map(issue => issue.path.join(".")),
     });
   } catch (error) {
+    // If Gemini fails due to billing/availability, use local free fallback
+    if (error instanceof GeminiRequestError && (error.status === 429 || error.status === 404 || error.status === 503)) {
+      console.warn("[Vercel Radio] Gemini unavailable, using local fallback", { status: error.status, providerMessage: error.providerMessage });
+      const local = generateLocalScript(input.data);
+      if (local.success) return res.status(200).json(local.data);
+    }
     if (error instanceof GeminiRequestError) {
       console.error("[Vercel Radio] Gemini request failed", { status: error.status, providerMessage: error.providerMessage });
       if (error.status === 400) return res.status(502).json({ message: "Gemini 요청 형식을 확인하지 못했습니다. 최신 배포 후 다시 시도해 주세요." });
