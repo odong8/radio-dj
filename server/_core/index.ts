@@ -8,7 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { generateHandler, synthesizeHandler } from "../vercelRadio";
+import { generateHandler, synthesizeHandler } from "../../api/_lib/radio.js";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {

@@ -1,3 +1,3 @@
-import { synthesizeHandler } from "../server/vercelRadio";
+import { synthesizeHandler } from "./_lib/radio.js";
 
 export default synthesizeHandler;

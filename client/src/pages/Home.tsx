@@ -82,11 +82,11 @@ const FAVORITE_DJS_KEY = "room-radio-dj-favorite-djs-v1";
 const MAX_ARCHIVE_SIZE = 20;
 
 const backgroundTracks: Record<Mood, { url: string; label: string }> = {
-  "잔잔해요": { url: "/audio/room-radio-calm-mist.mp3", label: "고요한 안개" },
-  "답답해요": { url: "/audio/room-radio-release.mp3", label: "창문 너머의 공기" },
-  "들떠요": { url: "/audio/room-radio-spark.mp3", label: "깨어 있는 불빛" },
-  "피곤해요": { url: "/audio/room-radio-sleepy.mp3", label: "이불 속의 밤" },
-  "멍해요": { url: "/audio/room-radio-stargaze.mp3", label: "별을 세는 시간" },
+  "잔잔해요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/WVTrOxlXacqiQBLy.mp3", label: "고요한 안개" },
+  "답답해요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/iMvNLgDUHFUHfDtg.mp3", label: "창문 너머의 공기" },
+  "들떠요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/MvBjRZudhSfHUfIL.mp3", label: "깨어 있는 불빛" },
+  "피곤해요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/qITwTIfPnYGnhbPs.mp3", label: "이불 속의 밤" },
+  "멍해요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/bUDmnIRdjuPHTOva.mp3", label: "별을 세는 시간" },
 };
 
 function isEpisode(value: unknown): value is Episode {

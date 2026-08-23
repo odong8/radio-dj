@@ -28,7 +28,7 @@
 | 검증 | 결과 |
 |---|---|
 | TypeScript 검사 | `pnpm check` 통과 |
-| 자동 테스트 | Vitest 17개 통과 |
+| 자동 테스트 | Vitest 19개 통과 |
 | 개발 서버용 프로덕션 빌드 | `pnpm build` 통과 |
 | Vercel 정적 빌드 | `VERCEL=1 pnpm run build:vercel` 통과 |
 | Vercel API 입력 오류 테스트 | POST 이외 요청 405, 잘못된 생성·음성 입력 400 검증 |
@@ -40,10 +40,10 @@
 
 | 변수명 | 필수 여부 | 설명 |
 |---|---|---|
-| `OPENAI_API_KEY` | 필수 | LLM 방송 대사 생성용 서버 전용 키 |
+| `GEMINI_API_KEY` | 필수 | Gemini 방송 대사 생성용 서버 전용 키 |
 | `ELEVENLABS_API_KEY` | 필수 | AI DJ 음성 생성용 서버 전용 키 |
-| `LLM_MODEL` | 권장 | 예: `gpt-4.1-mini`; 사용하는 LLM 제공자에 맞춘 모델 ID |
-| `OPENAI_BASE_URL` | 선택 | OpenAI 호환 제공자를 쓸 경우 `/v1`을 포함한 API 기본 주소 |
+| `GEMINI_MODEL` | 권장 | 예: `gemini-2.5-flash`; 사용할 Gemini 모델 ID |
+| `GEMINI_FALLBACK_MODEL` | 선택 | 첫 응답이 형식 검증에 실패할 때 사용할 보조 모델 ID |
 
 API 키의 실제 값은 GitHub 코드, PDF, 캡처 이미지에 절대 넣지 않는다.
 
@@ -52,6 +52,6 @@ API 키의 실제 값은 GitHub 코드, PDF, 캡처 이미지에 절대 넣지 �
 1. 제출용 ZIP을 내려받아 압축을 푼다.
 2. GitHub에 새 저장소를 만들고 모든 파일을 업로드한다.
 3. GitHub URL을 두 PDF의 자리표시자에 입력하고 필요하면 PDF를 다시 저장한다.
-4. Vercel에서 GitHub 저장소를 Import하고 `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`를 등록한다.
+4. Vercel에서 GitHub 저장소를 Import하고 `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`를 등록한다.
 5. 배포 URL에서 실제 방송 생성과 AI 음성 재생을 확인한다.
 6. Vercel Git Import 증빙을 캡처해 두 PDF, GitHub URL, Vercel URL, 캡처 이미지를 과제란에 제출한다.

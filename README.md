@@ -26,7 +26,7 @@
 
 ## 기술 스택
 
-React 19, TypeScript, Vite, Tailwind CSS, Node.js, Vercel Functions, Zod, Vitest, ElevenLabs Text-to-Speech API, OpenAI 호환 LLM API를 사용했습니다.
+React 19, TypeScript, Vite, Tailwind CSS, Node.js, Vercel Functions, Zod, Vitest, ElevenLabs Text-to-Speech API, Google Gemini API를 사용했습니다.
 
 ## 로컬 실행
 
@@ -35,7 +35,7 @@ pnpm install
 pnpm dev
 ```
 
-현재 개발 환경에서는 Manus 내장 LLM 경로를 보조적으로 지원합니다. 외부 배포 시에는 GitHub에 `.env` 파일을 만들지 말고, Vercel Dashboard의 **Settings → Environment Variables**에서 `OPENAI_API_KEY`와 `ELEVENLABS_API_KEY`를 직접 등록합니다.
+현재 개발 환경에서는 Manus 내장 LLM 경로를 보조적으로 지원합니다. 외부 배포 시에는 GitHub에 `.env` 파일을 만들지 말고, Vercel Dashboard의 **Settings → Environment Variables**에서 `GEMINI_API_KEY`와 `ELEVENLABS_API_KEY`를 직접 등록합니다.
 
 ## 테스트와 빌드
 
@@ -62,8 +62,8 @@ VERCEL=1 pnpm run build:vercel
 | Framework Preset | Vite |
 | Build Command | `pnpm run build:vercel` |
 | Output Directory | `dist` |
-| 필수 환경 변수 | `OPENAI_API_KEY`, `ELEVENLABS_API_KEY` |
-| 선택 환경 변수 | `LLM_MODEL`, `OPENAI_BASE_URL` |
+| 필수 환경 변수 | `GEMINI_API_KEY`, `ELEVENLABS_API_KEY` |
+| 선택 환경 변수 | `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` |
 
 전체 단계와 Git Import 증빙 캡처 방법은 [배포 가이드](docs/guide/GitHub_Vercel_배포가이드.md)를 참고하세요.
 
