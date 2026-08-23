@@ -98,12 +98,49 @@ export function parseGeneratedScript(content: string) {
 }
 
 async function requestGeminiScript(model: string, input: GenerationInput) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+  const privateKey = process.env.GEMINI_PRIVATE_KEY;
+  const serviceAccountEmail = process.env.GEMINI_SERVICE_ACCOUNT_EMAIL;
+  if (!privateKey || !serviceAccountEmail) throw new Error("GEMINI_CREDENTIALS_MISSING");
+
+  // Create JWT token for Service Account authentication
+  const crypto = await import("crypto");
+  const { createSign } = crypto;
+  
+  const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64url");
+  const now = Math.floor(Date.now() / 1000);
+  const payload = Buffer.from(JSON.stringify({
+    iss: serviceAccountEmail,
+    scope: "https://www.googleapis.com/auth/cloud-platform",
+    aud: "https://oauth2.googleapis.com/token",
+    exp: now + 3600,
+    iat: now,
+  })).toString("base64url");
+
+  const signatureInput = `${header}.${payload}`;
+  const sign = createSign("RSA-SHA256");
+  sign.update(signatureInput);
+  const signature = sign.sign(privateKey, "base64url");
+  const jwtToken = `${signatureInput}.${signature}`;
+
+  // Exchange JWT for access token
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwtToken,
+    }),
+  });
+
+  const tokenData = await tokenResponse.json() as { access_token?: string };
+  if (!tokenData.access_token) throw new Error("GEMINI_TOKEN_GENERATION_FAILED");
 
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${tokenData.access_token}`,
+    },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemInstruction(input) }] },
       contents: [{ role: "user", parts: [{ text: userInput(input) }] }],
@@ -115,18 +152,18 @@ async function requestGeminiScript(model: string, input: GenerationInput) {
     }),
   });
 
-  const payload = await response.json().catch(() => null) as {
+  const payload_response = await response.json().catch(() => null) as {
     candidates?: Array<{ content?: { parts?: Array<{ text?: unknown }> } }>;
     promptFeedback?: { blockReason?: unknown };
     error?: { message?: unknown };
   } | null;
   if (!response.ok) {
-    const providerMessage = typeof payload?.error?.message === "string" ? payload.error.message : "Gemini API request failed";
+    const providerMessage = typeof payload_response?.error?.message === "string" ? payload_response.error.message : "Gemini API request failed";
     throw new GeminiRequestError(response.status, providerMessage);
   }
-  const content = payload?.candidates?.[0]?.content?.parts?.map(part => part.text).find((text): text is string => typeof text === "string");
+  const content = payload_response?.candidates?.[0]?.content?.parts?.map(part => part.text).find((text): text is string => typeof text === "string");
   if (!content) {
-    const blockReason = typeof payload?.promptFeedback?.blockReason === "string" ? payload.promptFeedback.blockReason : "UNKNOWN";
+    const blockReason = typeof payload_response?.promptFeedback?.blockReason === "string" ? payload_response.promptFeedback.blockReason : "UNKNOWN";
     throw new Error(`GEMINI_CONTENT_MISSING_${blockReason}`);
   }
   return parseGeneratedScript(content);
@@ -191,8 +228,11 @@ export async function generateHandler(req: ApiRequest, res: ApiResponse) {
       return res.status(422).json({ message: "사연 내용을 조금 더 부드럽게 바꾼 뒤 다시 시도해 주세요." });
     }
     console.error("[Vercel Radio] Script generation failed", error instanceof Error ? error.message : "unknown_error");
-    if (error instanceof Error && error.message === "GEMINI_API_KEY_MISSING") {
-      return res.status(503).json({ message: "배포 환경에 Gemini API 키가 설정되지 않았습니다." });
+    if (error instanceof Error && error.message === "GEMINI_CREDENTIALS_MISSING") {
+      return res.status(503).json({ message: "배포 환경에 Gemini Service Account 자격증명이 설정되지 않았습니다." });
+    }
+    if (error instanceof Error && error.message === "GEMINI_TOKEN_GENERATION_FAILED") {
+      return res.status(503).json({ message: "Gemini 인증 토큰 생성에 실패했습니다. API 자격증명을 확인해 주세요." });
     }
   }
 
