@@ -164,8 +164,8 @@ export async function generateHandler(req: ApiRequest, res: ApiResponse) {
   if (!input.success) return res.status(400).json({ message: "입력값을 다시 확인해 주세요." });
 
   const usesManusProxy = !process.env.GEMINI_API_KEY && Boolean(process.env.BUILT_IN_FORGE_API_KEY);
-  const primaryModel = process.env.GEMINI_MODEL ?? (usesManusProxy ? "gpt-5-nano" : "gemini-2.5-flash");
-  const recoveryModel = process.env.GEMINI_FALLBACK_MODEL ?? (usesManusProxy ? "gpt-5-mini" : "gemini-2.5-pro");
+  const primaryModel = process.env.GEMINI_MODEL ?? (usesManusProxy ? "gpt-5-nano" : "gemini-3.6-flash");
+  const recoveryModel = process.env.GEMINI_FALLBACK_MODEL ?? (usesManusProxy ? "gpt-5-mini" : "gemini-flash-latest");
   const requestScript = usesManusProxy ? requestManusScript : requestGeminiScript;
 
   try {
@@ -184,7 +184,7 @@ export async function generateHandler(req: ApiRequest, res: ApiResponse) {
       if (error.status === 400) return res.status(502).json({ message: "Gemini 요청 형식을 확인하지 못했습니다. 최신 배포 후 다시 시도해 주세요." });
       if (error.status === 401 || error.status === 403) return res.status(503).json({ message: "Gemini API 키의 권한 또는 API 활성화 상태를 확인해 주세요." });
       if (error.status === 404) return res.status(503).json({ message: "Gemini 모델 ID를 확인해 주세요. 기본 모델은 gemini-2.5-flash입니다." });
-      if (error.status === 429) return res.status(429).json({ message: "Gemini 요청 한도에 도달했습니다. 잠시 후 다시 시도해 주세요." });
+      if (error.status === 429) return res.status(429).json({ message: "Gemini 요청 한도 또는 결제 잔액이 부족합니다. AI Studio 프로젝트의 결제/크레딧 상태를 확인하세요." });
     }
     if (error instanceof Error && error.message.startsWith("GEMINI_CONTENT_MISSING_")) {
       console.error("[Vercel Radio] Gemini response was blocked or empty", error.message);
