@@ -144,8 +144,8 @@ export async function generateHandler(req: ApiRequest, res: ApiResponse) {
   const input = generationInputSchema.safeParse(req.body);
   if (!input.success) return res.status(400).json({ message: "입력값을 다시 확인해 주세요." });
 
-  const primaryModel = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
-  const recoveryModel = process.env.GROQ_FALLBACK_MODEL ?? "llama-3.1-8b-instant";
+  const primaryModel = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
+  const recoveryModel = process.env.GROQ_FALLBACK_MODEL ?? "openai/gpt-oss-20b";
 
   try {
     const primary = await requestGroqScript(primaryModel, input.data);
