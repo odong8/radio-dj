@@ -174,7 +174,7 @@ export async function generateHandler(req: ApiRequest, res: ApiResponse) {
   if (!input.success) return res.status(400).json({ message: "입력값을 다시 확인해 주세요." });
 
   const usesManusProxy = !process.env.GEMINI_API_KEY && Boolean(process.env.BUILT_IN_FORGE_API_KEY);
-  const primaryModel = process.env.GEMINI_MODEL ?? (usesManusProxy ? "gpt-5-nano" : "gemini-3.6-flash");
+  const primaryModel = process.env.GEMINI_MODEL ?? (usesManusProxy ? "gpt-5-nano" : "gemini-2.5-flash");
   const recoveryModel = process.env.GEMINI_FALLBACK_MODEL ?? (usesManusProxy ? "gpt-5-mini" : "gemini-flash-latest");
   const requestScript = usesManusProxy ? requestManusScript : requestGeminiScript;
 
