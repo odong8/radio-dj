@@ -40,10 +40,10 @@
 
 | 변수명 | 필수 여부 | 설명 |
 |---|---|---|
-| `GEMINI_API_KEY` | 필수 | Gemini 방송 대사 생성용 서버 전용 키 |
+| `GROQ_API_KEY` | 필수 | Groq 방송 대사 생성용 서버 전용 키 |
 | `ELEVENLABS_API_KEY` | 필수 | AI DJ 음성 생성용 서버 전용 키 |
-| `GEMINI_MODEL` | 권장 | 예: `gemini-2.5-flash`; 사용할 Gemini 모델 ID |
-| `GEMINI_FALLBACK_MODEL` | 선택 | 첫 응답이 형식 검증에 실패할 때 사용할 보조 모델 ID |
+| `GROQ_MODEL` | 선택 | 기본 `openai/gpt-oss-120b`; 사용할 Groq 모델 ID |
+| `GROQ_FALLBACK_MODEL` | 선택 | 기본 `openai/gpt-oss-20b`; 첫 응답이 형식 검증에 실패할 때 사용할 보조 모델 ID |
 
 API 키의 실제 값은 GitHub 코드, PDF, 캡처 이미지에 절대 넣지 않는다.
 
@@ -52,6 +52,6 @@ API 키의 실제 값은 GitHub 코드, PDF, 캡처 이미지에 절대 넣지 �
 1. 제출용 ZIP을 내려받아 압축을 푼다.
 2. GitHub에 새 저장소를 만들고 모든 파일을 업로드한다.
 3. GitHub URL을 두 PDF의 자리표시자에 입력하고 필요하면 PDF를 다시 저장한다.
-4. Vercel에서 GitHub 저장소를 Import하고 `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`를 등록한다.
+4. Vercel에서 GitHub 저장소를 Import하고 `GROQ_API_KEY`, `ELEVENLABS_API_KEY`를 등록한다.
 5. 배포 URL에서 실제 방송 생성과 AI 음성 재생을 확인한다.
 6. Vercel Git Import 증빙을 캡처해 두 PDF, GitHub URL, Vercel URL, 캡처 이미지를 과제란에 제출한다.

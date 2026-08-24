@@ -84,3 +84,28 @@
 - [ ] Gemini 모델 404의 현재 지원 모델 ID를 공식 문서 기준으로 확인한다.
 - [ ] 기본 Gemini 모델과 404 오류 안내를 지원되는 모델 ID로 교체한다.
 - [ ] 모델 수정본을 검증·재패키징하고 최소 조작 재배포 절차를 안내한다.
+
+## 2026-08-24 Groq 통합 및 죽은 코드 정리
+
+- [x] Gemini 전용 미사용 파일(`server/vercelRadio.ts`)에 갇혀 있던 개선 프롬프트를 실제 배포 경로 `api/_lib/radio.ts`로 이관한다.
+- [x] 대본 길이 가이드(title 5~20자, opening 40~150자, body 60~200자, closing 30~100자)를 프롬프트에 넣어 스키마 상한과 맞춘다.
+- [x] 기계적인 대본을 200으로 반환하던 `generateLocalScript` 로컬 폴백을 제거하고 429/503을 실패로 알린다.
+- [x] 클라이언트가 쓰지 않는 tRPC 방송 경로(`radio` 라우터, `server/radio.ts`, `server/elevenlabs.ts`)와 대응 테스트를 삭제한다.
+- [x] `api/radio-api.test.ts`를 Groq 기준으로 재작성하고 프롬프트 회귀 테스트를 추가한다.
+- [x] `tsconfig.json`이 `api/**`와 테스트 파일까지 타입 검사하도록 include/exclude를 고친다.
+- [x] README·최종 점검표의 환경 변수를 `GROQ_API_KEY`·`GROQ_MODEL`·`GROQ_FALLBACK_MODEL`로 동기화한다.
+- [x] BGM을 외부 CDN URL 대신 `client/public/audio` 정적 파일로 되돌린다.
+- [x] ElevenLabs `voice_settings`에 voice id가 섞여 전송되던 문제를 고친다.
+- [x] `.vercel/`을 `.gitignore`에 넣고 git 추적에서 제외한다.
+- [ ] 제출자 본인이 GCP 콘솔에서 유출된 서비스 계정 키(`ais-gemini-key-fc3aa80cbc4f4cc@791137794941.iam.gserviceaccount.com`)를 폐기한다. 커밋 `6e9e25e`에 포함되어 공개 저장소 히스토리에 남아 있다.
+- [x] ElevenLabs 모델을 `eleven_flash_v2_5`로 바꿔 문자당 요금을 절반으로 낮춘다.
+- [x] 합성에 넘기는 대본 길이를 `MAX_SPEECH_CHARACTERS`(400자)로 제한해 1회 크레딧 상한을 고정한다.
+- [x] 에피소드 id별 오디오 캐시를 도입해 즐겨찾기·재생 시 재합성이 일어나지 않게 한다.
+- [x] `/api/generate`·`/api/synthesize`에 `Origin`/`Referer` 검사를 넣어 스크립트를 통한 크레딧 소모를 차단한다.
+- [x] 유출됐던 GCP 서비스 계정 키를 폐기한다. (2026-08-24 사용자 조치 완료)
+- [ ] 실제 `GROQ_API_KEY`로 4개 DJ 모드의 대본 품질과 길이 상한 초과 여부를 확인한다. (크레딧 절약을 위해 보류 중)
+- [ ] 커스텀 도메인을 붙이면 `ALLOWED_ORIGIN_HOSTS`에 등록한다.
+
+### 위 작업으로 무효가 된 이전 항목
+
+Gemini 관련 미완료 항목(모델 404 확인, 지원 모델 ID 교체, Gemini 배포 코드 확인)은 Groq 전환으로 해당 없음.

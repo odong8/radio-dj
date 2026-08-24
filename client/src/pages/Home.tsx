@@ -80,13 +80,17 @@ const ARCHIVE_KEY = "room-radio-dj-episodes-v1";
 const FAVORITE_EPISODES_KEY = "room-radio-dj-favorite-episodes-v1";
 const FAVORITE_DJS_KEY = "room-radio-dj-favorite-djs-v1";
 const MAX_ARCHIVE_SIZE = 20;
+// 오디오 Blob은 건당 수백 KB라 무한정 들고 있지 않는다. Map은 삽입 순서를
+// 지키므로 가장 오래된 항목부터 해제한다.
+const MAX_AUDIO_CACHE_SIZE = 12;
 
+// 외부 CDN이 죽으면 BGM이 전부 끊기므로 client/public/audio 아래 정적 파일을 쓴다.
 const backgroundTracks: Record<Mood, { url: string; label: string }> = {
-  "잔잔해요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/WVTrOxlXacqiQBLy.mp3", label: "고요한 안개" },
-  "답답해요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/iMvNLgDUHFUHfDtg.mp3", label: "창문 너머의 공기" },
-  "들떠요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/MvBjRZudhSfHUfIL.mp3", label: "깨어 있는 불빛" },
-  "피곤해요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/qITwTIfPnYGnhbPs.mp3", label: "이불 속의 밤" },
-  "멍해요": { url: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663074423754/bUDmnIRdjuPHTOva.mp3", label: "별을 세는 시간" },
+  "잔잔해요": { url: "/audio/room-radio-calm-mist.mp3", label: "고요한 안개" },
+  "답답해요": { url: "/audio/room-radio-release.mp3", label: "창문 너머의 공기" },
+  "들떠요": { url: "/audio/room-radio-spark.mp3", label: "깨어 있는 불빛" },
+  "피곤해요": { url: "/audio/room-radio-sleepy.mp3", label: "이불 속의 밤" },
+  "멍해요": { url: "/audio/room-radio-stargaze.mp3", label: "별을 세는 시간" },
 };
 
 function isEpisode(value: unknown): value is Episode {
@@ -176,7 +180,9 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
-  const generatedAudioUrlRef = useRef<string | null>(null);
+  // 같은 방송을 다시 들을 때마다 ElevenLabs를 다시 호출하면 글자 수만큼
+  // 크레딧이 또 빠진다. 에피소드 id별로 생성된 오디오를 들고 있다가 재사용한다.
+  const audioCacheRef = useRef(new Map<string, string>());
   const generateMutation = { isPending: isGenerating };
   const synthesizeMutation = { isPending: isSynthesizing };
 
@@ -190,7 +196,8 @@ export default function Home() {
     audioRef.current?.pause();
     backgroundAudioRef.current?.pause();
     previewAudioRef.current?.pause();
-    if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
+    audioCacheRef.current.forEach(url => URL.revokeObjectURL(url));
+    audioCacheRef.current.clear();
   }, []);
 
   useEffect(() => {
@@ -225,18 +232,35 @@ export default function Home() {
     void bgm.play().catch(() => toast.info("방송 시작 버튼을 누르면 배경 음악이 재생됩니다."));
   };
 
+  // 캐시된 오디오는 재사용해야 하므로 여기서 revoke하지 않는다.
   const clearGeneratedAudio = () => {
-    if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
-    generatedAudioUrlRef.current = null;
     setAudioUrl(null);
   };
 
+  const rememberAudio = (episodeId: string, url: string) => {
+    const cache = audioCacheRef.current;
+    cache.set(episodeId, url);
+    while (cache.size > MAX_AUDIO_CACHE_SIZE) {
+      const oldest = cache.keys().next();
+      if (oldest.done) break;
+      const staleUrl = cache.get(oldest.value);
+      if (staleUrl && staleUrl !== url) URL.revokeObjectURL(staleUrl);
+      cache.delete(oldest.value);
+    }
+  };
+
   const synthesizeEpisode = async (target: Episode, autoPlay = false) => {
+    const cached = audioCacheRef.current.get(target.id);
+    if (cached) {
+      setShouldAutoPlay(autoPlay);
+      setAudioUrl(cached);
+      return;
+    }
+
     setIsSynthesizing(true);
     try {
       const url = await synthesizeRadioAudio({ mode: target.mode, script: { title: target.title, opening: target.opening, body: target.body, closing: target.closing } });
-      if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
-      generatedAudioUrlRef.current = url;
+      rememberAudio(target.id, url);
       setShouldAutoPlay(autoPlay);
       setAudioUrl(url);
       if (!autoPlay) toast.success("AI DJ 음성이 준비되었습니다.");

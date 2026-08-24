@@ -1,10 +1,10 @@
 import { generateHandler } from "../api/_lib/radio";
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY must be set before running this script");
+if (!process.env.GROQ_API_KEY) {
+  throw new Error("GROQ_API_KEY must be set before running this script");
 }
 
-const req = { method: "POST", body: { mood: "잔잔해요", energy: 3, mode: "다정한 밤참", story: "테스트 사연입니다. 잘 들려주세요." } };
+const req = { method: "POST", headers: { origin: "http://localhost:3000" }, body: { mood: "잔잔해요", energy: 3, mode: "다정한 밤참", story: "테스트 사연입니다. 잘 들려주세요." } };
 
 function makeRes() {
   let statusCode: number | undefined;
