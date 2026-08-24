@@ -49,15 +49,6 @@ type ApiResponse = {
   end: (body?: Uint8Array) => void;
 };
 
-class GeminiRequestError extends Error {
-  constructor(
-    readonly status: number,
-    readonly providerMessage: string,
-  ) {
-    super(`GEMINI_REQUEST_FAILED_${status}`);
-  }
-}
-
 const modeDirections = {
   "다정한 밤참": "포근하고 다정한 심야 라디오 DJ처럼, 판단하지 말고 오늘을 잘 버틴 마음을 알아봐 주세요.",
   "과몰입 새벽": "사소한 일상을 영화 예고편처럼 장엄하게 말하되, 사용자를 놀리거나 비난하지 마세요.",
@@ -107,48 +98,20 @@ export function generateLocalScript(input: GenerationInput) {
   return scriptSchema.safeParse(candidate);
 }
 
-async function requestGeminiScript(model: string, input: GenerationInput) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_CREDENTIALS_MISSING");
-
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemInstruction(input) }] },
-      contents: [{ role: "user", parts: [{ text: userInput(input) }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseJsonSchema: radioScriptJsonSchema,
-        temperature: 0.85,
-      },
-    }),
-  });
-
-  const payload_response = await response.json().catch(() => null) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: unknown }> } }>;
-    promptFeedback?: { blockReason?: unknown };
-    error?: { message?: unknown };
-  } | null;
-  if (!response.ok) {
-    const providerMessage = typeof payload_response?.error?.message === "string" ? payload_response.error.message : "Gemini API request failed";
-    throw new GeminiRequestError(response.status, providerMessage);
+class GroqRequestError extends Error {
+  constructor(
+    readonly status: number,
+    readonly providerMessage: string,
+  ) {
+    super(`GROQ_REQUEST_FAILED_${status}`);
   }
-  const content = payload_response?.candidates?.[0]?.content?.parts?.map(part => part.text).find((text): text is string => typeof text === "string");
-  if (!content) {
-    const blockReason = typeof payload_response?.promptFeedback?.blockReason === "string" ? payload_response.promptFeedback.blockReason : "UNKNOWN";
-    throw new Error(`GEMINI_CONTENT_MISSING_${blockReason}`);
-  }
-  return parseGeneratedScript(content);
 }
 
-async function requestManusScript(model: string, input: GenerationInput) {
-  const apiKey = process.env.BUILT_IN_FORGE_API_KEY;
-  const proxyUrl = process.env.BUILT_IN_FORGE_API_URL;
-  if (!apiKey || !proxyUrl) throw new Error("GEMINI_API_KEY_MISSING");
+async function requestGroqScript(model: string, input: GenerationInput) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error("GROQ_CREDENTIALS_MISSING");
 
-  const baseUrl = `${proxyUrl.replace(/\/$/, "")}/v1`;
-  const response = await fetch(`${baseUrl}/chat/completions`, {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
@@ -161,10 +124,18 @@ async function requestManusScript(model: string, input: GenerationInput) {
     }),
   });
 
-  if (!response.ok) throw new Error(`MANUS_REQUEST_FAILED_${response.status}`);
-  const payload = await response.json() as { choices?: Array<{ message?: { content?: unknown } }> };
-  const content = payload.choices?.[0]?.message?.content;
-  if (typeof content !== "string") throw new Error("MANUS_CONTENT_MISSING");
+  const payload = await response.json().catch(() => null) as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+    error?: { message?: unknown };
+  } | null;
+
+  if (!response.ok) {
+    const providerMessage = typeof payload?.error?.message === "string" ? payload.error.message : "Groq API request failed";
+    throw new GroqRequestError(response.status, providerMessage);
+  }
+
+  const content = payload?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") throw new Error("GROQ_CONTENT_MISSING");
   return parseGeneratedScript(content);
 }
 
@@ -173,42 +144,34 @@ export async function generateHandler(req: ApiRequest, res: ApiResponse) {
   const input = generationInputSchema.safeParse(req.body);
   if (!input.success) return res.status(400).json({ message: "입력값을 다시 확인해 주세요." });
 
-  const usesManusProxy = !process.env.GEMINI_API_KEY && Boolean(process.env.BUILT_IN_FORGE_API_KEY);
-  const primaryModel = process.env.GEMINI_MODEL ?? (usesManusProxy ? "gpt-5-nano" : "gemini-3.6-flash");
-  const recoveryModel = process.env.GEMINI_FALLBACK_MODEL ?? (usesManusProxy ? "gpt-5-mini" : "gemini-flash-latest");
-  const requestScript = usesManusProxy ? requestManusScript : requestGeminiScript;
+  const primaryModel = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+  const recoveryModel = process.env.GROQ_FALLBACK_MODEL ?? "llama-3.1-8b-instant";
 
   try {
-    const primary = await requestScript(primaryModel, input.data);
+    const primary = await requestGroqScript(primaryModel, input.data);
     if (primary.success) return res.status(200).json(primary.data);
 
-    const recovery = await requestScript(recoveryModel, input.data);
+    const recovery = await requestGroqScript(recoveryModel, input.data);
     if (recovery.success) return res.status(200).json(recovery.data);
     console.error("[Vercel Radio] Script schema validation failed", {
       primaryIssues: primary.error.issues.map(issue => issue.path.join(".")),
       recoveryIssues: recovery.error.issues.map(issue => issue.path.join(".")),
     });
   } catch (error) {
-    // If Gemini fails due to billing/availability, use local free fallback
-    if (error instanceof GeminiRequestError && (error.status === 429 || error.status === 404 || error.status === 503)) {
-      console.warn("[Vercel Radio] Gemini unavailable, using local fallback", { status: error.status, providerMessage: error.providerMessage });
+    if (error instanceof GroqRequestError && (error.status === 429 || error.status === 503)) {
+      console.warn("[Vercel Radio] Groq unavailable, using local fallback", { status: error.status, providerMessage: error.providerMessage });
       const local = generateLocalScript(input.data);
       if (local.success) return res.status(200).json(local.data);
     }
-    if (error instanceof GeminiRequestError) {
-      console.error("[Vercel Radio] Gemini request failed", { status: error.status, providerMessage: error.providerMessage });
-      if (error.status === 400) return res.status(502).json({ message: "Gemini 요청 형식을 확인하지 못했습니다. 최신 배포 후 다시 시도해 주세요." });
-      if (error.status === 401 || error.status === 403) return res.status(503).json({ message: "Gemini API 키의 권한 또는 API 활성화 상태를 확인해 주세요." });
-      if (error.status === 404) return res.status(503).json({ message: "Gemini 모델 ID를 확인해 주세요. 기본 모델은 gemini-3.6-flash입니다." });
-      if (error.status === 429) return res.status(429).json({ message: "Gemini 요청 한도 또는 결제 잔액이 부족합니다. AI Studio 프로젝트의 결제/크레딧 상태를 확인하세요." });
-    }
-    if (error instanceof Error && error.message.startsWith("GEMINI_CONTENT_MISSING_")) {
-      console.error("[Vercel Radio] Gemini response was blocked or empty", error.message);
-      return res.status(422).json({ message: "사연 내용을 조금 더 부드럽게 바꾼 뒤 다시 시도해 주세요." });
+    if (error instanceof GroqRequestError) {
+      console.error("[Vercel Radio] Groq request failed", { status: error.status, providerMessage: error.providerMessage });
+      if (error.status === 401 || error.status === 403) return res.status(503).json({ message: "Groq API 키를 확인해 주세요." });
+      if (error.status === 404) return res.status(503).json({ message: "Groq 모델 ID를 확인해 주세요." });
+      if (error.status === 429) return res.status(429).json({ message: "Groq 요청 한도에 도달했습니다. 잠시 후 다시 시도해 주세요." });
     }
     console.error("[Vercel Radio] Script generation failed", error instanceof Error ? error.message : "unknown_error");
-    if (error instanceof Error && error.message === "GEMINI_CREDENTIALS_MISSING") {
-      return res.status(503).json({ message: "배포 환경에 Gemini API 키(GEMINI_API_KEY)가 설정되지 않았습니다." });
+    if (error instanceof Error && error.message === "GROQ_CREDENTIALS_MISSING") {
+      return res.status(503).json({ message: "배포 환경에 Groq API 키(GROQ_API_KEY)가 설정되지 않았습니다." });
     }
   }
 
