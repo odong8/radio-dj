@@ -1,78 +1,85 @@
-# 내 방의 라디오 DJ
+# 📻 내 방의 라디오 DJ (Radio DJ)
 
-> **지금, 당신의 방에서만 들리는 작은 방송.** 기분과 한 줄 사연을 입력하면 AI DJ가 개인화된 심야 라디오 대사와 음성으로 들려주는 반응형 웹앱입니다.
+> **"오늘 밤, 오직 당신만을 위해 들려주는 감성 심야 라디오"**  
+> 사용자의 기분과 한 줄 사연을 받아, AI DJ가 나만의 맞춤형 라디오 방송 대본을 작성하고 들려주는 반응형 웹 애플리케이션입니다.
 
-![내 방의 라디오 DJ 아키텍처](docs/architecture/room-radio-dj-architecture.png)
+[![Deploy with Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://radio-dj-mu.vercel.app)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-## 과제 제출 산출물
+---
 
-| 항목 | 위치 |
-|---|---|
-| 제품 요구사항 정의서(PRD) | `docs/prd/내방의라디오DJ_PRD.md` 및 PDF |
-| 웹앱 설명서 | `docs/guide/내방의라디오DJ_웹앱설명서.md` 및 PDF |
-| GitHub·Vercel 배포 가이드 | `docs/guide/GitHub_Vercel_배포가이드.md` |
-| 아키텍처 원본·이미지 | `docs/architecture/room-radio-dj-architecture.mmd`, `.png` |
-| 과제 요구 매핑 | `docs/submission-requirements.md` |
+## 🔗 서비스 바로가기
 
-## 주요 기능
+- **공식 배포 URL:** [radio-dj-mu.vercel.app](https://radio-dj-mu.vercel.app)
+- **GitHub 저장소:** [github.com/odong8/radio-dj](https://github.com/odong8/radio-dj)
 
-- 5가지 기분과 1~5 에너지 레벨, 4개 DJ 모드, 120자 한 줄 사연 입력
-- Lily·Liam·River·Chris의 서로 다른 DJ 보이스 미리듣기
-- LLM 기반 제목·오프닝·본문·클로징 생성과 불완전 응답 자동 재시도
-- ElevenLabs TTS 기반 AI DJ 음성 자동 재생
-- 기분별 BGM ON/OFF, 보관함(최대 20개), DJ·방송 즐겨찾기
-- LocalStorage 기반 브라우저 내 재청취
-- 375px 모바일 및 1280px 데스크톱 반응형 UI
+---
 
-## 기술 스택
+## 💡 프로젝트 소개
 
-React 19, TypeScript, Vite, Tailwind CSS, Node.js, Vercel Functions, Zod, Vitest, ElevenLabs Text-to-Speech API, Groq API를 사용했습니다.
+밤에 찾아오는 소소한 감정들은 SNS에 올리기엔 너무 공개적이고, 일기장에는 아무런 반응이 돌아오지 않습니다.  
+**'내 방의 라디오 DJ'**는 예전 심야 라디오가 주던 **"내 사연에 누군가 반응해 준다"**는 감성적 경험을 1인 청취자를 위해 재현합니다.
 
-## 로컬 실행
+- **회원가입/로그인 Zero:** 가입 없이 접속 즉시 사연 입력 가능
+- **15초 이내 고품질 방송:** 입력부터 대본 생성, 음성 합성 및 자동 재생까지 한 번의 클릭으로 완성
+- **100% 개인정보 보호:** 서버 DB 저장 없이 모든 기록은 사용자의 브라우저(`LocalStorage`)에만 저장
 
-```bash
-pnpm install
-pnpm dev
-```
+---
 
-로컬에서는 저장소 루트의 `.env`에 `GROQ_API_KEY`와 `ELEVENLABS_API_KEY`를 넣습니다(`.env`는 `.gitignore` 대상입니다). 외부 배포 시에는 GitHub에 `.env` 파일을 만들지 말고, Vercel Dashboard의 **Settings → Environment Variables**에서 두 키를 직접 등록합니다.
+## ✨ 핵심 기능
 
-## 테스트와 빌드
+| 기능 | 상세 설명 |
+| :--- | :--- |
+| 🎙️ **맞춤형 방송 생성** | 기분 5종, 에너지 레벨(1~5단계), DJ 모드 4종, 한 줄 사연(1~120자) 조건 선택 |
+| ✍️ **자연스러운 구어체 대본** | AI 티가 나지 않는 구어체 라디오 대본 생성 (제목 · 오프닝 · 본문 · 클로징) |
+| 🔊 **고품질 AI 음성 합성** | DJ 모드별 맞춤 보이스로 MP3 음성을 합성하고 완료 시 자동 재생 |
+| 🎶 **감성 BGM & Ducking** | 기분별 배경음악 자동 재생, DJ 음성 재생 시 BGM 볼륨 자동 낮춤 기능 |
+| 🎧 **DJ 미리듣기 & 오디오 캐시** | DJ 보이스 미리ฟัง 기능 및 이미 합성된 방송 재듣기 시 캐시 활용 |
+| 💾 **보관함 & 즐겨찾기** | 최근 방송 20개 저장, 즐겨찾기 보관 및 다시 듣기 모달 지원 |
 
-```bash
-# 타입 검사
-pnpm check
+---
 
-# 자동 테스트
-pnpm test
+## 🎧 DJ 모드 라인업
 
-# 현재 개발 서버용 빌드
-pnpm build
+- 🥣 **다정한 밤참:** 따뜻하고 부드러운 어조로 지친 하루를 품어주는 DJ
+- 🌙 **과몰입 새벽:** 밤의 감성에 깊이 공감하고 이야기를 나누는 DJ
+- 🌌 **엉뚱한 우주:** 독특하고 재치 있는 시선으로 분위기를 환기해 주는 DJ
+- 🕯️ **차분한 응원:** 담담하지만 진정성 있는 묵직한 응원을 전하는 DJ
 
-# Vercel 배포용 정적 빌드
-VERCEL=1 pnpm run build:vercel
-```
+---
 
-## Vercel 배포
+## 🔄 시스템 아키텍처 및 처리 흐름
 
-이 저장소를 GitHub에 올린 뒤 Vercel에서 Import합니다.
+상시 운영 서버 및 DB 없이 **정적 프론트엔드 + Vercel Serverless Functions**로 구동되어 서버 유지 비용이 들지 않습니다.
 
-| Vercel 설정 | 값 |
-|---|---|
-| Framework Preset | Vite |
-| Build Command | `pnpm run build:vercel` |
-| Output Directory | `dist` |
-| 필수 환경 변수 | `GROQ_API_KEY`, `ELEVENLABS_API_KEY` |
-| 선택 환경 변수 | `GROQ_MODEL`(기본 `openai/gpt-oss-120b`), `GROQ_FALLBACK_MODEL`(기본 `openai/gpt-oss-20b`) |
-| 커스텀 도메인 사용 시 | `ALLOWED_ORIGIN_HOSTS`에 도메인을 쉼표로 등록 (예: `radio.example.com`) |
+[클라이언트 (React)]
+└─ 사연 입력 & 유효성 검사
+└─ POST /api/generate
+└─ Groq API (openai/gpt-oss-120b / Zod 구조화 검증)
+└─ ON AIR 카드 대본 출력
+└─ POST /api/synthesize
+└─ ElevenLabs API (eleven_flash_v2_5 / 400자 제한)
+└─ MP3 음성 자동 재생 & LocalStorage 저장
 
-전체 단계와 Git Import 증빙 캡처 방법은 [배포 가이드](docs/guide/GitHub_Vercel_배포가이드.md)를 참고하세요.
 
-## 보안 및 비용 안내
+---
 
-- API 키는 Vercel 환경 변수로만 관리하고, 클라이언트 코드·GitHub·문서에 넣지 않습니다.
-- `/api/generate`와 `/api/synthesize`는 호출할 때마다 Groq·ElevenLabs 크레딧을 소모하므로, `Origin`(없으면 `Referer`)이 로컬 개발 주소·Vercel 배포 도메인·`ALLOWED_ORIGIN_HOSTS`에 등록한 도메인인 요청만 처리합니다. 헤더는 위조할 수 있어 완전한 방어는 아니고, 무차별 호출을 걸러내는 1차 관문입니다.
-- 1회 음성 합성에 넘기는 대사는 400자로 제한하고(`MAX_SPEECH_CHARACTERS`), 같은 방송을 다시 들을 때는 브라우저에 캐시된 오디오를 재사용해 크레딧을 아낍니다.
-- 음성 MP3는 서버리스 API가 즉시 브라우저로 전달하므로 과제 기본 흐름에는 별도 저장소 토큰이 필요하지 않습니다.
-- LLM·ElevenLabs 사용량은 각 제공자의 별도 요금·크레딧 정책을 따릅니다.
+## 🛠️ 기술 스택 (Tech Stack)
+
+### Frontend & UI
+- **Framework / Library:** React 19, Vite 7
+- **Language:** TypeScript (Strict Mode)
+- **Styling:** Tailwind CSS 4
+- **State & Storage:** Browser LocalStorage
+
+### Backend & AI API
+- **Serverless:** Vercel Functions (Node.js)
+- **LLM (대본 생성):** Groq API (`openai/gpt-oss-120b`, 폴백: `gpt-oss-20b`)
+- **TTS (음성 합성):** ElevenLabs API (`eleven_flash_v2_5`)
+- **Validation & Test:** Zod, Vitest (25개 테스트 케이스 통과)
+
+---
 
